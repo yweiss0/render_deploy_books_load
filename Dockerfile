@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y wget unzip curl gnupg libnss3 libxss1 l
 # Install Google Chrome
 RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && apt-get install -y google-chrome-stable
+    apt-get update && apt-get install -y google-chrome-stable && \
+    ln -s /usr/bin/google-chrome /usr/bin/chrome  # Create symbolic link to Chrome
 
 # Install ChromeDriver
 RUN CHROME_VERSION=$(google-chrome --version | grep -oP '[0-9]+\.[0-9]+\.[0-9]+') && \
