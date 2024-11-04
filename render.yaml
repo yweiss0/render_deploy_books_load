@@ -1,26 +1,22 @@
 services:
-    - name: selenium-flask-api
-      type: web
-      runtime: docker
-      region: oregon
-      plan: starter # Use 'starter' plan; can upgrade to 'standard' or higher if required
-      dockerfilePath: Dockerfile # The path to the Dockerfile
-      buildCommand: "" # Docker-based services don't need a separate build command
-      startCommand: "" # Docker-based services use CMD defined in the Dockerfile
-      envVars:
-          - key: PORT
-            value: 5000
-      healthCheckPath: /
-      disk:
-          name: selenium-cache
-          mountPath: /root/.cache # Persistent disk for caching if required
-          sizeGB: 1 # Set disk size (increase if needed)
-      scaling:
-          minInstances: 1
-          maxInstances: 1
-          targetMemoryPercent: 75
-          targetCPUPercent: 75
-      routes:
-          - type: rewrite
-            source: /*
-            destination: / # Rewrite everything to root for simplicity
+  - name: selenium-flask-api
+    type: web
+    runtime: docker
+    region: oregon
+    plan: starter  # Use 'starter' plan; can upgrade to 'standard' or higher if required
+    dockerfilePath: Dockerfile  # The path to the Dockerfile
+    buildCommand: ""  # Docker-based services don't need a separate build command
+    startCommand: ""  # Docker-based services use CMD defined in the Dockerfile
+    envVars:
+      - key: PORT
+        value: 5000
+    healthCheckPath: /
+    disk:
+      name: selenium-cache
+      mountPath: /root/.cache  # Persistent disk for caching if required
+      sizeGB: 1  # Set disk size (increase if needed)
+    scaling:
+      minInstances: 1
+      maxInstances: 2  # Make sure maxInstances is greater than minInstances
+      targetMemoryPercent: 75
+      targetCPUPercent: 75
