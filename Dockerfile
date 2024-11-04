@@ -13,6 +13,9 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add
     apt-get update && apt-get install -y google-chrome-stable && \
     ln -s /usr/bin/google-chrome /usr/bin/chrome  # Create symbolic link to Chrome
 
+# Verify Chrome installation
+RUN google-chrome --version
+
 # Install ChromeDriver
 RUN CHROME_VERSION=$(google-chrome --version | grep -oP '[0-9]+\.[0-9]+\.[0-9]+') && \
     CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION) && \
