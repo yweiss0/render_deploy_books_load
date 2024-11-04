@@ -29,7 +29,7 @@ def fetch_book_data(book_name):
     options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.binary_location = "/usr/bin/chrome"  # Updated to match the symbolic link in the Dockerfile
+    options.binary_location = "/usr/bin/google-chrome"  # Updated to match the actual Chrome installation path
 
     try:
         # Initialize the driver within the function
