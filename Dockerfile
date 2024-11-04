@@ -15,6 +15,9 @@ RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd6
     apt-get install -y ./google-chrome-stable_current_amd64.deb && \
     rm ./google-chrome-stable_current_amd64.deb
 
+# Add execute permission to Chrome binary
+RUN chmod +x /usr/bin/google-chrome
+
 # Verify Chrome installation
 RUN google-chrome --version
 
