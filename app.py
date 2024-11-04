@@ -3,7 +3,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 from flask import Flask, jsonify, request
@@ -35,8 +34,8 @@ def fetch_book_data(book_name):
     driver = None  # Initialize driver to None to handle exceptions
 
     try:
-        # Initialize the driver within the function, use ChromeDriverManager with correct path
-        service = Service(ChromeDriverManager().install())
+        # Use the ChromeDriver installed in the Docker container
+        service = Service("/usr/local/bin/chromedriver")
         driver = webdriver.Chrome(service=service, options=options)
 
         with lock:
