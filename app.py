@@ -17,19 +17,21 @@ import threading
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Selenium WebDriver setup
-options = webdriver.ChromeOptions()
-options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
 # Lock to prevent threading issues with WebDriver
 lock = threading.Lock()
 
 def fetch_book_data(book_name):
     book = {"name": book_name, "author": "", "image": "", "description": ""}
     search_url = f"https://www.e-vrit.co.il/Search/{quote(book_name)}"
+    
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.binary_location = "/usr/bin/google-chrome"  # Explicitly set the path to the Chrome binary
+
+    # Initialize the driver within the function
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
         with lock:
@@ -66,6 +68,8 @@ def fetch_book_data(book_name):
 
     except Exception as e:
         book["error"] = f"Could not fetch details: {str(e)}"
+    finally:
+        driver.quit()  # Ensure the driver quits after processing
     
     return book
 
@@ -82,6 +86,4 @@ def get_book():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-driver.quit()  # Close the browser when done
 
