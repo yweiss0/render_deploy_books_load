@@ -7,8 +7,8 @@ WORKDIR /app
 # Install dependencies for Selenium and Chrome
 RUN apt-get update && apt-get install -y \
     wget unzip curl gnupg libnss3 libxss1 libappindicator3-1 libasound2 fonts-liberation \
-    libatk-bridge2.0-0 libgtk-3-0 ca-certificates fonts-liberation libu2f-udev \
-    && apt-get clean
+    libatk-bridge2.0-0 libgtk-3-0 ca-certificates fonts-liberation libu2f-udev && \
+    apt-get clean
 
 # Install Google Chrome
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
