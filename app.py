@@ -99,5 +99,11 @@ def get_book_data():
     
     return jsonify(book_data)
 
+# Simple test endpoint to confirm server is working
+@app.route('/api/test', methods=['GET'])
+def test_endpoint():
+    name = request.args.get('name', 'World')
+    return jsonify({"message": f"Hello, {name}!"})
+
 if __name__ == '__main__':
     app.run(debug=True)
