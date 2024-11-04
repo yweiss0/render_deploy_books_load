@@ -84,3 +84,20 @@ def fetch_book_data(book_name):
                 app.logger.error(f"Driver could not be closed properly: {str(e)}")
     
     return book
+
+# API endpoint to fetch book data
+@app.route('/api/book', methods=['GET'])
+def get_book_data():
+    # Get the book name from the request arguments
+    book_name = request.args.get('book_name')
+    
+    if not book_name:
+        return jsonify({"error": "book_name parameter is required"}), 400
+    
+    # Fetch the book data
+    book_data = fetch_book_data(book_name)
+    
+    return jsonify(book_data)
+
+if __name__ == '__main__':
+    app.run(debug=True)
