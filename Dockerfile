@@ -7,7 +7,8 @@ WORKDIR /app
 # Install dependencies for Selenium and Chrome
 RUN apt-get update && apt-get install -y \
     wget unzip curl gnupg libnss3 libxss1 libappindicator3-1 libasound2 fonts-liberation \
-    libatk-bridge2.0-0 libgtk-3-0 ca-certificates fonts-liberation libu2f-udev
+    libatk-bridge2.0-0 libgtk-3-0 ca-certificates fonts-liberation libu2f-udev \
+    && apt-get clean
 
 # Install Google Chrome
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
@@ -16,6 +17,13 @@ RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd6
 
 # Verify Chrome installation
 RUN google-chrome --version
+
+# Install ChromeDriver
+RUN CHROME_DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE) && \
+    wget -q "https://chromedriver.storage.googleapis.com/${CHROME_DRIVER_VERSION}/chromedriver_linux64.zip" && \
+    unzip chromedriver_linux64.zip && \
+    mv chromedriver /usr/local/bin/ && \
+    rm chromedriver_linux64.zip
 
 # Set environment variables for Chrome to ensure it works in headless environments
 ENV DISPLAY=:99
