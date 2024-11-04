@@ -10,6 +10,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import threading
 import logging
+import os
 
 # Set up Flask app
 app = Flask(__name__)
@@ -29,11 +30,13 @@ def fetch_book_data(book_name):
     options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.binary_location = "/usr/bin/google-chrome"  # Updated to match the actual Chrome installation path
+    options.binary_location = "/usr/bin/google-chrome"  # The most likely location for the Chrome binary
 
     try:
-        # Initialize the driver within the function
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        # Initialize the driver within the function, use ChromeDriverManager with correct path
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+
         with lock:
             # Use Selenium to request the page
             driver.get(search_url)
@@ -72,8 +75,8 @@ def fetch_book_data(book_name):
     finally:
         try:
             driver.quit()  # Ensure the driver quits after processing
-        except:
-            app.logger.error("Driver could not be closed properly.")
+        except Exception as e:
+            app.logger.error(f"Driver could not be closed properly: {str(e)}")
     
     return book
 
