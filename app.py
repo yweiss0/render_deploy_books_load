@@ -104,6 +104,12 @@ def get_book_data():
 def test_endpoint():
     name = request.args.get('name', 'World')
     return jsonify({"message": f"Hello, {name}!"})
+    
+@app.route('/health')
+def health_check():
+    # Simple health check to ensure that the service responds to Render's checks
+    return "Server is up and running!", 200
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
