@@ -1,6 +1,3 @@
-
-# Book details fetcher from evrit.co.il using Flask and Selenium
-
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -28,7 +25,7 @@ def fetch_book_data(book_name):
     options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.binary_location = "/usr/bin/google-chrome"  # Explicitly set the path to the Chrome binary
+    options.binary_location = "/usr/bin/chrome"  # Updated to match the symbolic link in the Dockerfile
 
     # Initialize the driver within the function
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -86,4 +83,3 @@ def get_book():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
-
