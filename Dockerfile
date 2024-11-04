@@ -9,12 +9,13 @@ RUN apt-get update && apt-get install -y \
     wget unzip curl gnupg libnss3 libxss1 libappindicator3-1 libasound2 fonts-liberation \
     libatk-bridge2.0-0 libgtk-3-0 ca-certificates fonts-liberation libu2f-udev
 
-# Download and extract the Chrome binary
-ARG CHROME_VERSION=110.0.5481.77
-RUN wget -q -O /tmp/chrome.deb https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}-1_amd64.deb \
-    && apt-get update \
-    && apt-get install -y /tmp/chrome.deb \
-    && rm /tmp/chrome.deb
+# Install Google Chrome (use a more generic repository to avoid issues with Google's versioning)
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt-get update && apt-get install -y ./google-chrome-stable_current_amd64.deb && \
+    rm ./google-chrome-stable_current_amd64.deb
+
+# Verify Chrome installation
+RUN google-chrome --version
 
 # Install ChromeDriver
 RUN CHROME_VERSION=$(google-chrome --version | grep -oP '[0-9]+\.[0-9]+\.[0-9]+') && \
@@ -22,11 +23,13 @@ RUN CHROME_VERSION=$(google-chrome --version | grep -oP '[0-9]+\.[0-9]+\.[0-9]+'
     wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && rm /tmp/chromedriver.zip
 
-# Verify Chrome and ChromeDriver installations
-RUN google-chrome --version && chromedriver --version
+# Verify ChromeDriver installation
+RUN chromedriver --version
 
-# Set environment variables to avoid crashes due to insufficient resources
-ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
+# Set environment variables for Chrome to ensure it works in headless environments
+ENV DISPLAY=:99
+ENV CHROME_BIN=/usr/bin/google-chrome
+ENV PATH="/usr/local/bin:$PATH"
 
 # Install Python dependencies
 COPY requirements.txt requirements.txt
