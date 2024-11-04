@@ -10,4 +10,4 @@ services:
     envVars:
       - key: PORT
         value: 5000
-    healthCheckPath: /
+    healthCheckPath: /health
