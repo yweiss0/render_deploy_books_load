@@ -30,7 +30,9 @@ def fetch_book_data(book_name):
     options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.binary_location = "/usr/bin/google-chrome"  # The most likely location for the Chrome binary
+    options.binary_location = "/usr/bin/google-chrome"  # Explicitly set Chrome binary location
+
+    driver = None  # Initialize driver to None to handle exceptions
 
     try:
         # Initialize the driver within the function, use ChromeDriverManager with correct path
@@ -73,10 +75,11 @@ def fetch_book_data(book_name):
         book["error"] = f"Could not fetch details: {str(e)}"
         app.logger.error(f"Error fetching book details for {book_name}: {str(e)}")
     finally:
-        try:
-            driver.quit()  # Ensure the driver quits after processing
-        except Exception as e:
-            app.logger.error(f"Driver could not be closed properly: {str(e)}")
+        if driver:
+            try:
+                driver.quit()  # Ensure the driver quits after processing
+            except Exception as e:
+                app.logger.error(f"Driver could not be closed properly: {str(e)}")
     
     return book
 
