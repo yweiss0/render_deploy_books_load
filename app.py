@@ -30,6 +30,9 @@ def fetch_book_data(book_name):
     options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    
+    # Explicitly set the path to the Chrome binary
+    options.binary_location = os.getenv("CHROME_BIN", "/usr/bin/google-chrome")
 
     driver = None  # Initialize driver to None to handle exceptions
 
@@ -81,18 +84,3 @@ def fetch_book_data(book_name):
                 app.logger.error(f"Driver could not be closed properly: {str(e)}")
     
     return book
-
-@app.route('/api/book', methods=['GET'])
-def get_book():
-    book_name = request.args.get('name')
-    app.logger.info(f"Received request for book: {book_name}")
-    if not book_name:
-        return jsonify({"error": "No book name provided"}), 400
-    
-    # Fetch the book data
-    book_data = fetch_book_data(book_name)
-    # Return the book data as JSON
-    return jsonify(book_data)
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
