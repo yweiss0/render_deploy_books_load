@@ -9,10 +9,14 @@ from urllib.parse import quote
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import threading
+import logging
 
 # Set up Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # Enable CORS for all routes
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 # Lock to prevent threading issues with WebDriver
 lock = threading.Lock()
@@ -27,10 +31,9 @@ def fetch_book_data(book_name):
     options.add_argument('--disable-dev-shm-usage')
     options.binary_location = "/usr/bin/chrome"  # Updated to match the symbolic link in the Dockerfile
 
-    # Initialize the driver within the function
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    
     try:
+        # Initialize the driver within the function
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         with lock:
             # Use Selenium to request the page
             driver.get(search_url)
@@ -65,14 +68,19 @@ def fetch_book_data(book_name):
 
     except Exception as e:
         book["error"] = f"Could not fetch details: {str(e)}"
+        app.logger.error(f"Error fetching book details for {book_name}: {str(e)}")
     finally:
-        driver.quit()  # Ensure the driver quits after processing
+        try:
+            driver.quit()  # Ensure the driver quits after processing
+        except:
+            app.logger.error("Driver could not be closed properly.")
     
     return book
 
 @app.route('/api/book', methods=['GET'])
 def get_book():
     book_name = request.args.get('name')
+    app.logger.info(f"Received request for book: {book_name}")
     if not book_name:
         return jsonify({"error": "No book name provided"}), 400
     
