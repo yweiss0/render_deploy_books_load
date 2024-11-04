@@ -30,7 +30,6 @@ def fetch_book_data(book_name):
     options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.binary_location = "/usr/bin/google-chrome"  # Explicitly set Chrome binary location
 
     driver = None  # Initialize driver to None to handle exceptions
 
