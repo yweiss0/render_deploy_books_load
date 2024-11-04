@@ -1,3 +1,5 @@
+import logging
+from flask import Flask, jsonify, request
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -6,51 +8,43 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from urllib.parse import quote
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 import threading
-import logging
-import os
 
 # Set up Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})  # Enable CORS for all routes
-
-# Set up logging
 logging.basicConfig(level=logging.INFO)
-
-# Lock to prevent threading issues with WebDriver
 lock = threading.Lock()
 
 def fetch_book_data(book_name):
     book = {"name": book_name, "author": "", "image": "", "description": ""}
     search_url = f"https://www.e-vrit.co.il/Search/{quote(book_name)}"
-    
+
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
+    options.add_argument('--headless')  # Headless mode for server environments
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    
-    # Explicitly set the path to the Chrome binary
-    options.binary_location = os.getenv("CHROME_BIN", "/usr/bin/google-chrome")
 
-    driver = None  # Initialize driver to None to handle exceptions
+    # Set Chrome binary path explicitly
+    options.binary_location = "/usr/bin/google-chrome"
+
+    driver = None
 
     try:
-        # Use ChromeDriverManager to install and manage the ChromeDriver version
+        logging.info(f"Starting Selenium for book: {book_name}")
+        # Set up ChromeDriver service
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
 
         with lock:
-            # Use Selenium to request the page
+            logging.info(f"Fetching URL: {search_url}")
             driver.get(search_url)
-            
-            # Wait for the desired content to load (e.g., a product-item container)
+
+            # Wait for the product item container to be loaded
             WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, ".product-list .product-item"))
             )
-            
-            # Extract page source once the content is loaded
+
+            # Get the page source and parse it
             html = driver.page_source
             soup = BeautifulSoup(html, "html.parser")
 
@@ -68,37 +62,40 @@ def fetch_book_data(book_name):
                 # Extract author
                 author_element = product_container.select_one(".product-inner-data.link-list a")
                 book["author"] = author_element.text.strip() if author_element else "Author not available"
-                
+
                 # Extract description
                 description_element = soup.select_one(".product-desc.tab-content__single-tab.tab-content__about-book.highlight__done")
                 book["description"] = description_element.text.strip() if description_element else "Description not available"
 
+            logging.info(f"Fetched book data: {book}")
+
     except Exception as e:
         book["error"] = f"Could not fetch details: {str(e)}"
-        app.logger.error(f"Error fetching book details for {book_name}: {str(e)}")
+        logging.error(f"Error fetching book details for {book_name}: {str(e)}")
     finally:
         if driver:
             try:
                 driver.quit()  # Ensure the driver quits after processing
+                logging.info(f"Driver quit successfully for book: {book_name}")
             except Exception as e:
-                app.logger.error(f"Driver could not be closed properly: {str(e)}")
-    
+                logging.error(f"Driver could not be closed properly: {str(e)}")
+
     return book
 
-# API endpoint to fetch book data
 @app.route('/api/book', methods=['GET'])
-def get_book_data():
-    # Get the book name from the request arguments
-    book_name = request.args.get('book_name')
-    
+def get_book():
+    book_name = request.args.get('name')
+    app.logger.info(f"Received request for book: {book_name}")
     if not book_name:
-        return jsonify({"error": "book_name parameter is required"}), 400
-    
+        return jsonify({"error": "No book name provided"}), 400
+
     # Fetch the book data
     book_data = fetch_book_data(book_name)
-    
-    return jsonify(book_data)
+    if "error" in book_data:
+        return jsonify(book_data), 500
 
+    # Return the book data as JSON
+    return jsonify(book_data)
 # Simple test endpoint to confirm server is working
 @app.route('/api/test', methods=['GET'])
 def test_endpoint():
@@ -110,6 +107,5 @@ def health_check():
     # Simple health check to ensure that the service responds to Render's checks
     return "Server is up and running!", 200
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
