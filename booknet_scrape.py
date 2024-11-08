@@ -55,6 +55,12 @@ def fetch_book_data(book_name):
             html = driver.page_source
             soup = BeautifulSoup(html, "html.parser")
 
+            # Check if products count is 0
+            products_count_nav = soup.select_one("nav.products-count")
+            if products_count_nav and "0 מוצרים נמצאו" in products_count_nav.text:
+                book["error"] = "Book not found"
+                return book
+
             # Locate the book container where all relevant information is available
             book_container = soup.select_one(".book-item")
             if book_container:
