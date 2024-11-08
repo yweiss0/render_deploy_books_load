@@ -17,7 +17,7 @@ CORS(app)  # Enable CORS for all routes
 # Selenium WebDriver options setup
 def get_driver():
     options = webdriver.ChromeOptions()
-    options.binary_location = "/usr/bin/google-chrome"  # Specify the location of Chrome binary
+    options.binary_location = "/usr/bin/google-chrome"  # Obly for the VPS Specify the location of Chrome binary
     options.add_argument('--headless')  # Run headless to work better on servers/environments without GUI
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
@@ -36,7 +36,7 @@ books = [
     {"name": "כראמל 4", "author": "", "image": "", "description": ""},
 ]
 
-def fetch_book_data(book_name):
+def fetch_book_data(book_name, author_name=None):
     book = {"name": book_name, "author": "", "image": "", "description": "", "link": ""}
     search_url = f"https://www.booknet.co.il/%D7%97%D7%99%D7%A4%D7%95%D7%A9?q={quote(book_name)}"
     driver = get_driver()
@@ -61,45 +61,64 @@ def fetch_book_data(book_name):
                 book["error"] = "Book not found"
                 return book
 
-            # Locate the book container where all relevant information is available
-            book_container = soup.select_one(".book-item")
-            if book_container:
-                # Extract author
-                author_element = book_container.select_one(".book-below-title.product-author")
-                book["author"] = author_element.text.strip() if author_element else "Author not available"
+            # Locate all book-item containers
+            book_containers = soup.select(".book-item")
+            selected_book_container = None
 
-                # Extract link to the book
-                link_element = book_container.select_one("a")
-                if link_element:
-                    book_link = link_element.get("href")
-                    full_link = f"https://www.booknet.co.il{book_link}"
-                    book["link"] = full_link
+            for container in book_containers:
+                # Extract author for each book item
+                author_element = container.select_one(".book-below-title.product-author")
+                author_text = author_element.text.strip() if author_element else ""
 
-                    # Visit the book page to extract the description and image
-                    driver.get(full_link)
-                    WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.ID, "itemSummary"))
-                    )
-                    book_page_html = driver.page_source
-                    book_soup = BeautifulSoup(book_page_html, "html.parser")
+                # If author_name is provided, match it
+                if author_name:
+                    if author_name == author_text:
+                        selected_book_container = container
+                        break
+                else:
+                    selected_book_container = container
+                    break
 
-                    # Extract description from itemSummary div
-                    description_element = book_soup.select_one("#itemSummary")
-                    book["description"] = description_element.text.strip() if description_element else "Description not available"
+            # If no matching book is found, return an error
+            if not selected_book_container:
+                book["error"] = "Book not found with the specified author"
+                return book
 
-                    # Extract image from big-thumb class
-                    big_thumb_element = book_soup.select_one(".big-thumb")
-                    if big_thumb_element:
-                        image_element = big_thumb_element.select_one("img")
-                        if image_element:
-                            image_url = image_element.get("src")
-                            book["image"] = f"https://www.booknet.co.il{image_url}"
-                        else:
-                            book["image"] = "Image not available"
+            # Extract author
+            book["author"] = author_text if author_text else "Author not available"
+
+            # Extract link to the book
+            link_element = selected_book_container.select_one("a")
+            if link_element:
+                book_link = link_element.get("href")
+                full_link = f"https://www.booknet.co.il{book_link}"
+                book["link"] = full_link
+
+                # Visit the book page to extract the description and image
+                driver.get(full_link)
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.ID, "itemSummary"))
+                )
+                book_page_html = driver.page_source
+                book_soup = BeautifulSoup(book_page_html, "html.parser")
+
+                # Extract description from itemSummary div
+                description_element = book_soup.select_one("#itemSummary")
+                book["description"] = description_element.text.strip() if description_element else "Description not available"
+
+                # Extract image from big-thumb class
+                big_thumb_element = book_soup.select_one(".big-thumb")
+                if big_thumb_element:
+                    image_element = big_thumb_element.select_one("img")
+                    if image_element:
+                        image_url = image_element.get("src")
+                        book["image"] = f"https://www.booknet.co.il{image_url}"
                     else:
                         book["image"] = "Image not available"
                 else:
-                    book["link"] = "Link not available"
+                    book["image"] = "Image not available"
+            else:
+                book["link"] = "Link not available"
 
     except Exception as e:
         book["error"] = f"Could not fetch details: {str(e)}"
@@ -111,19 +130,21 @@ def fetch_book_data(book_name):
 @app.route('/api/book', methods=['GET'])
 def get_book():
     book_name = request.args.get('name')
+    author_name = request.args.get('author')
     if not book_name:
         return jsonify({"error": "No book name provided"}), 400
 
     # Fetch the book data
-    book_data = fetch_book_data(book_name)
+    book_data = fetch_book_data(book_name, author_name)
     # Return the book data as JSON
     return jsonify(book_data)
 
 @app.route('/api/books', methods=['GET'])
 def get_books():
+    author_name = request.args.get('author')
     results = []
     for book in books:
-        book_data = fetch_book_data(book["name"])
+        book_data = fetch_book_data(book["name"], author_name)
         results.append(book_data)
     return jsonify(results)
 
